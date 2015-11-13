@@ -31,8 +31,8 @@
   * flow.mul
   * flow.div
   * flow.min
-  * flow.toggle = (x) -> x(!x())
-  * flow.if_ = (test, then_, else_) ->
+  * flow.toggle
+  * flow.if_
 
 
 ## LICENSE
