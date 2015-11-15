@@ -115,7 +115,7 @@ describe('reactive flow', function() {
     a$(3);
     return expect(a_()).to.equal(3);
   });
-  return it('should process multiple bind and duplex on same object and attr', function() {
+  return iit('should process multiple bind and duplex on same object and attr', function() {
     var a1, a2, b1, b2, m, sum;
     m = {
       a: 1,

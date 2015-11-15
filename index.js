@@ -53,6 +53,7 @@ renew = function(computation) {
     var value;
     if (!arguments.length) {
       value = computation();
+      method.valid = true;
       method.invalidate();
       return value;
     } else {
@@ -241,6 +242,7 @@ if (Object.defineProperty) {
         if (arguments.length) {
           throw new Error('should not set value on flow.bind');
         }
+        getter.valid = true;
         return getter.cacheValue;
       };
       getter.cacheValue = obj[attr];
@@ -273,6 +275,7 @@ if (Object.defineProperty) {
     if (!set || !set.invalidate) {
       method = function(value) {
         if (!arguments.length) {
+          method.valid = true;
           return method.cacheValue;
         }
         if (value !== obj[attr]) {
@@ -348,9 +351,9 @@ if (Object.defineProperty) {
     if (!method) {
       method = _dcDuplexMethodMap[attr] = function(value) {
         if (!arguments.length) {
+          method.valid = true;
           return obj[attr];
         } else {
-          method.valid = true;
           return obj.dcSet$(attr, value);
         }
       };
