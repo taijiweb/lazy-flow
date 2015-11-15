@@ -35,9 +35,6 @@ describe('reactive flow', function() {
       return r1() + r2();
     });
     expect(r3()).to.equal(3);
-    expect(function() {
-      return r3(2);
-    }).to["throw"]();
     r1(2);
     return expect(r3()).to.equal(4);
   });

@@ -21,7 +21,7 @@ react = (method) ->
     if !invalidateCallbacks.length then method.invalidateCallbacks = null
 
   method.invalidate = ->
-#    if !method.valid then return
+    if !method.valid then return
     if !method.invalidateCallbacks then return
     for callback in method.invalidateCallbacks
      callback()
@@ -209,7 +209,9 @@ else
 
     method = _dcBindMethodMap[attr]
     if !method
-      method = _dcBindMethodMap[attr] = -> obj[attr]
+      method = _dcBindMethodMap[attr] = ->
+        method.valid = true
+        obj[attr]
       method.toString = () ->  "#{debugName or 'm'}[#{attr}]"
       react method
 
@@ -232,7 +234,9 @@ else
     if !method
       method = _dcDuplexMethodMap[attr] = (value) ->
         if !arguments.length then obj[attr]
-        else obj.dcSet$(attr, value)
+        else
+          method.valid = true
+          obj.dcSet$(attr, value)
       method.isDuplex = true
       method.toString = () ->  "#{debugName or 'm'}[#{attr}]"
       react method

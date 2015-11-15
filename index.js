@@ -31,6 +31,9 @@ react = function(method) {
   };
   method.invalidate = function() {
     var callback, _i, _len, _ref1;
+    if (!method.valid) {
+      return;
+    }
     if (!method.invalidateCallbacks) {
       return;
     }
@@ -315,6 +318,7 @@ if (Object.defineProperty) {
     method = _dcBindMethodMap[attr];
     if (!method) {
       method = _dcBindMethodMap[attr] = function() {
+        method.valid = true;
         return obj[attr];
       };
       method.toString = function() {
@@ -346,6 +350,7 @@ if (Object.defineProperty) {
         if (!arguments.length) {
           return obj[attr];
         } else {
+          method.valid = true;
           return obj.dcSet$(attr, value);
         }
       };
