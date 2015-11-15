@@ -24,6 +24,15 @@ flow.mul = (x, y) -> binary(x, y, (x, y) -> x*y)
 flow.div = (x, y) -> binary(x, y, (x, y) -> x/y)
 flow.min = (x, y) -> binary(x, y, (x, y) -> Math.min(x, y))
 
+# obj can be an object or a function
+# attr should be an string
+flow.funcAttr = (obj, attr) ->
+    flow obj, attr, (value) ->
+      objValue = obj()
+      if !objValue? then return objValue
+      if !arguments.length then objValue[attr]
+      else objValue[attr] = value
+
 # this is intended to be called directly
 # e.g.div {onclick: -> toggle x; comp.update()}
 flow.toggle = (x) -> x(!x())

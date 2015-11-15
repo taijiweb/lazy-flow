@@ -47,9 +47,11 @@ react = function(method) {
 renew = function(computation) {
   var method;
   method = function() {
+    var value;
     if (!arguments.length) {
+      value = computation();
       method.invalidate();
-      return method.value = computation();
+      return value;
     } else {
       throw new Error('flow.renew is not allowed to accept arguments');
     }
@@ -95,7 +97,7 @@ module.exports = flow = function() {
     }
   }
   cacheValue = null;
-  reactive = react(function() {
+  reactive = react(function(value) {
     if (!arguments.length) {
       if (!reactive.valid) {
         reactive.valid = true;
@@ -104,7 +106,13 @@ module.exports = flow = function() {
         return cacheValue;
       }
     } else {
-      throw new Error('flow.dependent is not allowed to accept arguments');
+      if (value === cacheValue) {
+        return value;
+      }
+      cacheValue = value;
+      computation(value);
+      reactive.invalidate();
+      return cacheValue;
     }
   });
   for (_k = 0, _len1 = deps.length; _k < _len1; _k++) {
@@ -135,6 +143,9 @@ flow.pipe = function() {
     if (typeof dep === 'function' && !dep.invalidate) {
       reactive = react(function() {
         var args, _k, _len1;
+        if (argumnets.length) {
+          throw new Error("flow.pipe is not allow to have arguments");
+        }
         reactive.invalidate();
         args = [];
         for (_k = 0, _len1 = deps.length; _k < _len1; _k++) {
@@ -185,6 +196,7 @@ flow.see = see = function(value, transform) {
   cacheValue = value;
   method = function(value) {
     if (!arguments.length) {
+      method.valid = true;
       return cacheValue;
     } else {
       value = transform ? transform(value) : value;
@@ -215,27 +227,27 @@ flow.seeN = function() {
 
 if (Object.defineProperty) {
   flow.bind = function(obj, attr, debugName) {
-    var cacheValue, d, getter, set, setter;
+    var d, getter, set, setter;
     d = Object.getOwnPropertyDescriptor(obj, attr);
     if (d) {
       getter = d.get;
       set = d.set;
     }
     if (!getter || !getter.invalidate) {
-      cacheValue = obj[attr];
       getter = function() {
         if (arguments.length) {
           throw new Error('should not set value on flow.bind');
         }
-        return cacheValue;
+        return getter.cacheValue;
       };
+      getter.cacheValue = obj[attr];
       setter = function(value) {
         if (value !== obj[attr]) {
           if (set) {
             set(value);
           }
           getter.invalidate();
-          return cacheValue = value;
+          return getter.cacheValue = value;
         }
       };
       react(getter);
@@ -250,16 +262,15 @@ if (Object.defineProperty) {
     return getter;
   };
   flow.duplex = function(obj, attr, debugName) {
-    var cacheValue, d, get, method, set;
+    var d, get, method, set;
     d = Object.getOwnPropertyDescriptor(obj, attr);
     if (d) {
       get = d.get, set = d.set;
     }
     if (!set || !set.invalidate) {
-      cacheValue = obj[attr];
       method = function(value) {
         if (!arguments.length) {
-          return cacheValue;
+          return method.cacheValue;
         }
         if (value !== obj[attr]) {
           if (set) {
@@ -267,9 +278,10 @@ if (Object.defineProperty) {
           }
           get && get.invalidate && get.invalidate();
           method.invalidate();
-          return cacheValue = value;
+          return method.cacheValue = value;
         }
       };
+      method.cacheValue = obj[attr];
       react(method);
       method.isDuplex = true;
       method.toString = function() {

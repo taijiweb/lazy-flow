@@ -84,6 +84,21 @@ flow.min = function(x, y) {
   });
 };
 
+flow.funcAttr = function(obj, attr) {
+  return flow(obj, attr, function(value) {
+    var objValue;
+    objValue = obj();
+    if (objValue == null) {
+      return objValue;
+    }
+    if (!arguments.length) {
+      return objValue[attr];
+    } else {
+      return objValue[attr] = value;
+    }
+  });
+};
+
 flow.toggle = function(x) {
   return x(!x());
 };

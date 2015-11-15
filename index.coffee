@@ -21,6 +21,7 @@ react = (method) ->
     if !invalidateCallbacks.length then method.invalidateCallbacks = null
 
   method.invalidate = ->
+#    if !method.valid then return
     if !method.invalidateCallbacks then return
     for callback in method.invalidateCallbacks
      callback()
@@ -32,8 +33,9 @@ react = (method) ->
 renew = (computation) ->
   method = ->
     if !arguments.length
+      value = computation()
       method.invalidate()
-      method.value = computation()
+      value
     else throw new Error 'flow.renew is not allowed to accept arguments'
 
   method.toString = () ->  "renew: #{funcString(computation)}"
@@ -65,13 +67,18 @@ module.exports = flow = (deps..., computation) ->
 
   cacheValue = null
 
-  reactive = react ->
+  reactive = react (value) ->
     if !arguments.length
       if !reactive.valid
         reactive.valid = true
         cacheValue = computation()
       else cacheValue
-    else throw new Error 'flow.dependent is not allowed to accept arguments'
+    else
+      if value==cacheValue then return value
+      cacheValue = value
+      computation(value)
+      reactive.invalidate()
+      cacheValue
 
   for dep in deps
     if dep and dep.onInvalidate
@@ -85,6 +92,7 @@ flow.pipe = (deps..., computation) ->
   for dep in deps
     if typeof dep == 'function' and !dep.invalidate
       reactive = react ->
+        if argumnets.length then throw new Error "flow.pipe is not allow to have arguments"
         reactive.invalidate()
         args = []
         for dep in deps
@@ -118,7 +126,9 @@ flow.see = see = (value, transform) ->
   cacheValue = value
 
   method = (value) ->
-    if !arguments.length then cacheValue
+    if !arguments.length
+      method.valid = true
+      cacheValue
     else
       value = if transform then transform value else value
       if value!=cacheValue
@@ -134,6 +144,8 @@ flow.seeN = (computations...) ->
   for computation in computations then see computation
 
 # Object.defineProperty is ES5 feature, it's not supported in IE 6, 7, 8
+# bind and duplex can not be refactored and merged to one implemention
+# because the isDuplex should not affect bind
 if Object.defineProperty
 
   flow.bind = (obj, attr, debugName) ->
@@ -144,17 +156,20 @@ if Object.defineProperty
       {set} = d
 
     if !getter or !getter.invalidate
-      cacheValue = obj[attr]
       getter = ->
         if arguments.length
           throw new Error('should not set value on flow.bind')
-        cacheValue
+        getter.cacheValue
+
+      getter.cacheValue = obj[attr]
+
       setter = (value) ->
         if value!=obj[attr]
           if set then set(value)
           getter.invalidate()
-          cacheValue = value
+          getter.cacheValue = value
       react getter
+
       getter.toString = () ->  "#{debugName or 'm'}[#{attr}]"
       Object.defineProperty(obj, attr, {get:getter, set:setter})
     getter
@@ -164,14 +179,14 @@ if Object.defineProperty
     if d then {get, set} = d
 
     if !set or !set.invalidate
-      cacheValue = obj[attr]
       method = (value) ->
-        if !arguments.length then return cacheValue
+        if !arguments.length then return method.cacheValue
         if value!=obj[attr]
           if set then set(value)
           get and get.invalidate and get.invalidate()
           method.invalidate()
-          cacheValue = value
+          method.cacheValue = value
+      method.cacheValue = obj[attr]
       react method
       method.isDuplex = true
       method.toString = () ->  "#{debugName or 'm'}[#{attr}]"
