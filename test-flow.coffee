@@ -81,7 +81,7 @@ describe 'reactive flow', ->
     a$ 3
     expect(a_()).to.equal(3)
 
-  iit 'should process multiple bind and duplex on same object and attr', ->
+  it 'should process multiple bind and duplex on same object and attr', ->
     m = {a:1, b:2}
     a1 = duplex(m, 'a'); b1 = duplex(m, 'b')
     a2 = duplex(m, 'a'); b2 = duplex(m, 'b')
