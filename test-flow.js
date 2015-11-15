@@ -27,7 +27,7 @@ describe('reactive flow', function() {
     x = 2;
     return expect(r()).to.equal(2);
   });
-  it('should flow', function() {
+  iit('should flow', function() {
     var r1, r2, r3;
     r1 = see(1);
     r2 = see(2);
