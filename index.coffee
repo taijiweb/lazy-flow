@@ -34,6 +34,7 @@ renew = (computation) ->
   method = ->
     if !arguments.length
       value = computation()
+      method.valid = true
       method.invalidate()
       value
     else throw new Error 'flow.renew is not allowed to accept arguments'
@@ -159,6 +160,7 @@ if Object.defineProperty
       getter = ->
         if arguments.length
           throw new Error('should not set value on flow.bind')
+        getter.valid = true
         getter.cacheValue
 
       getter.cacheValue = obj[attr]
@@ -180,7 +182,9 @@ if Object.defineProperty
 
     if !set or !set.invalidate
       method = (value) ->
-        if !arguments.length then return method.cacheValue
+        if !arguments.length
+          method.valid = true
+          return method.cacheValue
         if value!=obj[attr]
           if set then set(value)
           get and get.invalidate and get.invalidate()
@@ -233,9 +237,10 @@ else
 
     if !method
       method = _dcDuplexMethodMap[attr] = (value) ->
-        if !arguments.length then obj[attr]
-        else
+        if !arguments.length
           method.valid = true
+          obj[attr]
+        else
           obj.dcSet$(attr, value)
       method.isDuplex = true
       method.toString = () ->  "#{debugName or 'm'}[#{attr}]"

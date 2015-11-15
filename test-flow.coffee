@@ -20,7 +20,7 @@ describe 'reactive flow', ->
     x = 2
     expect(r()).to.equal 2
 
-  iit 'should flow', ->
+  it 'should flow', ->
     r1 = see 1
     r2 = see 2
     r3 = flow(r1, r2, -> r1()+r2())
