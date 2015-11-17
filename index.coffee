@@ -9,6 +9,7 @@ react = (method) ->
   method.invalidateCallbacks = []
 
   method.onInvalidate = (callback) ->
+    if typeof callback != 'function' then throw new Error "call back should be a function"
     invalidateCallbacks = method.invalidateCallbacks or  method.invalidateCallbacks = []
     invalidateCallbacks.push(callback)
 

@@ -1,3 +1,3 @@
+*.coffee
 test-*.coffee
-index.coffee
-addon.coffee
+!gulpfile.coffee
