@@ -1,6 +1,6 @@
-var binary, bind, duplex, flow, unary, _ref;
+var binary, bind, duplex, flow, see, unary, _ref;
 
-_ref = require('./index'), bind = _ref.bind, duplex = _ref.duplex, flow = _ref.flow, unary = _ref.unary, binary = _ref.binary;
+_ref = require('./index'), see = _ref.see, bind = _ref.bind, duplex = _ref.duplex, flow = _ref.flow, unary = _ref.unary, binary = _ref.binary;
 
 module.exports = flow;
 
@@ -12,6 +12,20 @@ flow.bindings = function(model, name) {
     result[key + '_'] = bind(model, key, name);
   }
   return result;
+};
+
+flow.seeAttrs = function(target, from) {
+  var attr, key, value;
+  for (key in from) {
+    value = from[key];
+    attr = target[key];
+    if (typeof attr === 'function') {
+      attr(value);
+    } else {
+      target[key] = see(value);
+    }
+  }
+  return target;
 };
 
 flow.neg = function(x) {

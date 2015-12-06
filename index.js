@@ -11,6 +11,9 @@ react = function(method) {
   method.invalidateCallbacks = [];
   method.onInvalidate = function(callback) {
     var invalidateCallbacks;
+    if (typeof callback !== 'function') {
+      throw new Error("call back should be a function");
+    }
     invalidateCallbacks = method.invalidateCallbacks || (method.invalidateCallbacks = []);
     return invalidateCallbacks.push(callback);
   };

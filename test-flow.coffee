@@ -2,7 +2,7 @@
 
 {see, bind, duplex, renew, flow} = require './index'
 
-{bindings} = require './addon'
+{bindings, seeAttrs} = require './addon'
 
 describe 'reactive flow', ->
 
@@ -97,3 +97,14 @@ describe 'reactive flow', ->
     a2 1
     expect(sum.valid).to.equal false, 'valid 4'
     expect(sum()).to.equal 3, 'sum 4'
+
+  it 'should seeAttrs', ->
+    a = {}
+    b = {x:1}
+    seeAttrs(a, b)
+    expect(typeof a.x).to.equal 'function'
+    expect(a.x()).to.equal 1
+    b = {x:2}
+    seeAttrs(a, b)
+    expect(typeof a.x).to.equal 'function'
+    expect(a.x()).to.equal 2

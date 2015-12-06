@@ -1,10 +1,10 @@
-var bind, bindings, duplex, expect, flow, idescribe, iit, ndescribe, nit, renew, see, _ref, _ref1;
+var bind, bindings, duplex, expect, flow, idescribe, iit, ndescribe, nit, renew, see, seeAttrs, _ref, _ref1, _ref2;
 
 _ref = require('bdd-test-helper'), expect = _ref.expect, iit = _ref.iit, idescribe = _ref.idescribe, nit = _ref.nit, ndescribe = _ref.ndescribe;
 
 _ref1 = require('./index'), see = _ref1.see, bind = _ref1.bind, duplex = _ref1.duplex, renew = _ref1.renew, flow = _ref1.flow;
 
-bindings = require('./addon').bindings;
+_ref2 = require('./addon'), bindings = _ref2.bindings, seeAttrs = _ref2.seeAttrs;
 
 describe('reactive flow', function() {
   it('should see', function() {
@@ -39,11 +39,11 @@ describe('reactive flow', function() {
     return expect(r3()).to.equal(4);
   });
   it('should flow unary', function() {
-    var a_, b_, r, _ref2;
-    _ref2 = bindings({
+    var a_, b_, r, _ref3;
+    _ref3 = bindings({
       a: 4,
       b: 2
-    }), a_ = _ref2.a_, b_ = _ref2.b_;
+    }), a_ = _ref3.a_, b_ = _ref3.b_;
     r = flow.neg(a_);
     expect(r()).to.equal(-4, 'neg');
     r = flow.no(a_);
@@ -54,11 +54,11 @@ describe('reactive flow', function() {
     return expect(r()).to.equal(-5, 'bitnot');
   });
   it('should flow binary', function() {
-    var a_, b_, r, _ref2;
-    _ref2 = bindings({
+    var a_, b_, r, _ref3;
+    _ref3 = bindings({
       a: 4,
       b: 2
-    }), a_ = _ref2.a_, b_ = _ref2.b_;
+    }), a_ = _ref3.a_, b_ = _ref3.b_;
     r = flow.add(a_, b_);
     expect(r()).to.equal(6, 'add');
     r = flow.sub(a_, b_);
@@ -108,14 +108,14 @@ describe('reactive flow', function() {
     return expect(a2()).to.equal(1, 'a2 again');
   });
   it('should process bindings', function() {
-    var a$, a_, _ref2;
-    _ref2 = bindings({
+    var a$, a_, _ref3;
+    _ref3 = bindings({
       a: 1
-    }), a$ = _ref2.a$, a_ = _ref2.a_;
+    }), a$ = _ref3.a$, a_ = _ref3.a_;
     a$(3);
     return expect(a_()).to.equal(3);
   });
-  return it('should process multiple bind and duplex on same object and attr', function() {
+  it('should process multiple bind and duplex on same object and attr', function() {
     var a1, a2, b1, b2, m, sum;
     m = {
       a: 1,
@@ -137,5 +137,21 @@ describe('reactive flow', function() {
     a2(1);
     expect(sum.valid).to.equal(false, 'valid 4');
     return expect(sum()).to.equal(3, 'sum 4');
+  });
+  return it('should seeAttrs', function() {
+    var a, b;
+    a = {};
+    b = {
+      x: 1
+    };
+    seeAttrs(a, b);
+    expect(typeof a.x).to.equal('function');
+    expect(a.x()).to.equal(1);
+    b = {
+      x: 2
+    };
+    seeAttrs(a, b);
+    expect(typeof a.x).to.equal('function');
+    return expect(a.x()).to.equal(2);
   });
 });

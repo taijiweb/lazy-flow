@@ -1,4 +1,4 @@
-{bind, duplex, flow, unary, binary} = require './index'
+{see, bind, duplex, flow, unary, binary} = require './index'
 
 module.exports = flow
 
@@ -8,6 +8,14 @@ flow.bindings =  (model, name) ->
     result[key+'$'] = duplex(model, key, name)
     result[key+'_'] = bind(model, key, name)
   result
+
+flow.seeAttrs = (target, from) ->
+  for key, value of from
+    attr = target[key]
+    if typeof attr == 'function'
+      attr(value)
+    else target[key] = see value
+  target
 
 flow.neg = (x) -> unary(x, (x) -> -x)
 flow.no = (x) -> unary(x, (x) -> !x)
