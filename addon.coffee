@@ -1,4 +1,4 @@
-{see, bind, duplex, flow, unary, binary} = require './index'
+{see, bind, duplex, flow, unary, binary} = require('./index')
 
 module.exports = flow
 
@@ -18,7 +18,7 @@ flow.seeAttrs = (target, from) ->
   target
 
 flow.neg = (x) -> unary(x, (x) -> -x)
-flow.no = (x) -> unary(x, (x) -> !x)
+flow.no = flow.not = flow.not_ = (x) -> unary(x, (x) -> !x)
 flow.bitnot = (x) -> unary(x, (x) -> ~x)
 flow.reciprocal = (x) -> unary(x, (x) -> 1/x)
 flow.abs = (x) -> unary(x, Math.abs)
@@ -31,6 +31,9 @@ flow.sub = (x, y) -> binary(x, y, (x, y) -> x-y)
 flow.mul = (x, y) -> binary(x, y, (x, y) -> x*y)
 flow.div = (x, y) -> binary(x, y, (x, y) -> x/y)
 flow.min = (x, y) -> binary(x, y, (x, y) -> Math.min(x, y))
+
+flow.and = (x, y) -> binary(x, y, (x, y) -> x && y)
+flow.or = (x, y) -> binary(x, y, (x, y) -> x || y)
 
 # obj can be an object or a function
 # attr should be an string

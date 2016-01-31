@@ -93,6 +93,9 @@ dependent = function(computation) {
 module.exports = flow = function() {
   var cacheValue, computation, dep, deps, reactive, _i, _j, _k, _len, _len1;
   deps = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), computation = arguments[_i++];
+  if (!deps.length) {
+    return react(computation);
+  }
   for (_j = 0, _len = deps.length; _j < _len; _j++) {
     dep = deps[_j];
     if (typeof dep === 'function' && !dep.invalidate) {
@@ -115,11 +118,11 @@ module.exports = flow = function() {
     } else {
       if (value === cacheValue) {
         return value;
+      } else {
+        cacheValue = computation(value);
+        reactive.invalidate();
+        return cacheValue;
       }
-      cacheValue = value;
-      computation(value);
-      reactive.invalidate();
-      return cacheValue;
     }
   });
   for (_k = 0, _len1 = deps.length; _k < _len1; _k++) {

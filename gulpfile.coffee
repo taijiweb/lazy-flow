@@ -1,6 +1,6 @@
 path = require('path')
 gulp = require('gulp')
-gutil = require 'gulp-util'
+gutil = require('gulp-util')
 
 changed = require('gulp-changed')
 cache = require('gulp-cached')
@@ -26,9 +26,7 @@ FromStream = from('').constructor
 FromStream::to = (dst) -> @pipe(dest(dst))
 FromStream::pipelog = (obj, log=gutil.log) -> @pipe(obj).on('error', log)
 
-#task 'clean', (cb) -> del(["index.js", "test-util.js"], cb)
-
-coffee = require 'gulp-coffee'
+coffee = require('gulp-coffee')
 
 task 'coffee', (cb) ->
   from(['index.coffee', 'addon.coffee', 'test-flow.coffee'], {cache:'coffee'}).pipelog(coffee({bare: true})).pipe(dest('./'))

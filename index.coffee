@@ -1,4 +1,4 @@
-{newLine, funcString} = require 'dc-util'
+{newLine, funcString} = require('dc-util')
 
 react = (method) ->
 
@@ -60,6 +60,9 @@ dependent = (computation) ->
   react method
 
 module.exports = flow = (deps..., computation) ->
+  if !deps.length
+    return react computation
+
   for dep in deps
     if typeof dep == 'function' and !dep.invalidate
       reactive = react ->
@@ -76,17 +79,19 @@ module.exports = flow = (deps..., computation) ->
         cacheValue = computation()
       else cacheValue
     else
-      if value==cacheValue then return value
-      cacheValue = value
-      computation(value)
-      reactive.invalidate()
-      cacheValue
+      if value==cacheValue
+        value
+      else
+        cacheValue = computation(value)
+        reactive.invalidate()
+        cacheValue
 
   for dep in deps
     if dep and dep.onInvalidate
       dep.onInvalidate(reactive.invalidate)
 
-  reactive.toString = () ->  "flow: [#{(for dep in deps then dep.toString()).join(',')}] --> #{funcString(computation)}"
+  reactive.toString = ->
+    "flow: [#{(for dep in deps then dep.toString()).join(',')}] --> #{funcString(computation)}"
 
   reactive
 

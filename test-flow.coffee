@@ -1,8 +1,8 @@
-{expect, iit, idescribe, nit, ndescribe} = require('bdd-test-helper')
+{expect, iit, idescribe, nit, ndescribe, ddescribe} = require('bdd-test-helper')
 
-{see, bind, duplex, renew, flow} = require './index'
+{see, bind, duplex, renew, flow} = require('./index')
 
-{bindings, seeAttrs} = require './addon'
+{bindings, seeAttrs} = require('./addon')
 
 describe 'reactive flow', ->
 
