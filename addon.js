@@ -1,6 +1,6 @@
-var binary, bind, duplex, flow, see, unary, _ref;
+var binary, bind, duplex, flow, react, see, unary, _ref;
 
-_ref = require('./index'), see = _ref.see, bind = _ref.bind, duplex = _ref.duplex, flow = _ref.flow, unary = _ref.unary, binary = _ref.binary;
+_ref = require('lazy-flow'), react = _ref.react, see = _ref.see, bind = _ref.bind, duplex = _ref.duplex, flow = _ref.flow, unary = _ref.unary, binary = _ref.binary;
 
 module.exports = flow;
 
@@ -231,4 +231,21 @@ flow.if_ = function(test, then_, else_) {
       });
     }
   }
+};
+
+flow.thisBind = function(field) {
+  var method;
+  method = react(function() {
+    return this[field];
+  });
+  method.bindComponent = function(component) {
+    var bound;
+    bound = flow.bind(component, field);
+    bound.onInvalidate(function() {
+      method.valid = true;
+      return method.invalidate();
+    });
+    return method;
+  };
+  return method;
 };

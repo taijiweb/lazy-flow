@@ -1,6 +1,6 @@
 {expect, iit, idescribe, nit, ndescribe, ddescribe} = require('bdd-test-helper')
 
-{see, bind, duplex, renew, flow} = require('./index')
+{see, bind, duplex, renew, flow} = require('lazy-flow')
 
 {bindings, seeAttrs} = require('./addon')
 

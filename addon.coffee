@@ -1,8 +1,8 @@
-{see, bind, duplex, flow, unary, binary} = require('./index')
+{react, see, bind, duplex, flow, unary, binary} = require('lazy-flow')
 
 module.exports = flow
 
-flow.bindings =  (model, name) ->
+flow.bindings = (model, name) ->
   result = {}
   for key of model
     result[key+'$'] = duplex(model, key, name)
@@ -45,7 +45,7 @@ flow.funcAttr = (obj, attr) ->
       else objValue[attr] = value
 
 # this is intended to be called directly
-# e.g.div {onclick: -> toggle x; comp.update()}
+# e.g.div {onclick: -> toggle x; dc.update()}
 flow.toggle = (x) -> x(!x())
 
 flow.if_ = (test, then_, else_) ->
@@ -73,3 +73,16 @@ flow.if_ = (test, then_, else_) ->
         flow else_, (-> if test() then then_ else else_())
       else -> if test() then then_ else else_()
     else flow test, -> if test() then then_ else else_
+
+flow.thisBind = (field) ->
+  method = react -> this[field]
+  method.bindComponent = (component) ->
+    bound = flow.bind(component, field)
+    bound.onInvalidate ->
+      # make invalidate() does its work
+      method.valid = true
+      method.invalidate()
+    method
+  method
+
+

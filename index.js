@@ -1,4 +1,4 @@
-var dependent, flow, funcString, newLine, react, renew, see, _ref,
+var flow, funcString, lazy, newLine, react, renew, see, _ref,
   __slice = [].slice;
 
 _ref = require('dc-util'), newLine = _ref.newLine, funcString = _ref.funcString;
@@ -55,7 +55,7 @@ renew = function(computation) {
   method = function() {
     var value;
     if (!arguments.length) {
-      value = computation();
+      value = computation.call(this);
       method.valid = true;
       method.invalidate();
       return value;
@@ -69,23 +69,23 @@ renew = function(computation) {
   return react(method);
 };
 
-dependent = function(computation) {
+lazy = function(computation) {
   var cacheValue, method;
   cacheValue = null;
   method = function() {
     if (!arguments.length) {
       if (!method.valid) {
         method.valid = true;
-        return cacheValue = computation();
+        return cacheValue = computation.call(this);
       } else {
         return cacheValue;
       }
     } else {
-      throw new Error('flow.dependent is not allowed to accept arguments');
+      throw new Error('flow.lazy is not allowed to accept arguments');
     }
   };
   method.toString = function() {
-    return "dependent: " + (funcString(computation));
+    return "lazy: " + (funcString(computation));
   };
   return react(method);
 };
@@ -101,7 +101,7 @@ module.exports = flow = function() {
     if (typeof dep === 'function' && !dep.invalidate) {
       reactive = react(function() {
         reactive.invalidate();
-        return computation();
+        return computation.call(this);
       });
       return reactive;
     }
@@ -111,7 +111,7 @@ module.exports = flow = function() {
     if (!arguments.length) {
       if (!reactive.valid) {
         reactive.valid = true;
-        return cacheValue = computation();
+        return cacheValue = computation.call(this);
       } else {
         return cacheValue;
       }
@@ -119,7 +119,7 @@ module.exports = flow = function() {
       if (value === cacheValue) {
         return value;
       } else {
-        cacheValue = computation(value);
+        cacheValue = computation.call(this, value);
         reactive.invalidate();
         return cacheValue;
       }
@@ -166,7 +166,7 @@ flow.pipe = function() {
             args.push(dep);
           }
         }
-        return computation.apply(null, args);
+        return computation.apply(this, args);
       });
       return reactive;
     }
@@ -182,7 +182,7 @@ flow.pipe = function() {
         args.push(dep);
       }
     }
-    return computation.apply(null, args);
+    return computation.apply(this, args);
   });
   for (_k = 0, _len1 = deps.length; _k < _len1; _k++) {
     dep = deps[_k];
@@ -195,9 +195,11 @@ flow.pipe = function() {
 
 flow.react = react;
 
+flow.lazy = lazy;
+
 flow.renew = renew;
 
-flow.dependent = dependent;
+flow.lazy = lazy;
 
 flow.flow = flow;
 

@@ -34,7 +34,7 @@ react = (method) ->
 renew = (computation) ->
   method = ->
     if !arguments.length
-      value = computation()
+      value = computation.call(this)
       method.valid = true
       method.invalidate()
       value
@@ -44,18 +44,18 @@ renew = (computation) ->
 
   react method
 
-dependent = (computation) ->
+lazy = (computation) ->
   cacheValue = null
 
   method = ->
     if !arguments.length
       if !method.valid
         method.valid = true
-        cacheValue = computation()
+        cacheValue = computation.call(this)
       else cacheValue
-    else throw new Error 'flow.dependent is not allowed to accept arguments'
+    else throw new Error 'flow.lazy is not allowed to accept arguments'
 
-  method.toString = () ->  "dependent: #{funcString(computation)}"
+  method.toString = () ->  "lazy: #{funcString(computation)}"
 
   react method
 
@@ -67,7 +67,7 @@ module.exports = flow = (deps..., computation) ->
     if typeof dep == 'function' and !dep.invalidate
       reactive = react ->
         reactive.invalidate()
-        computation()
+        computation.call(this)
       return reactive
 
   cacheValue = null
@@ -76,13 +76,14 @@ module.exports = flow = (deps..., computation) ->
     if !arguments.length
       if !reactive.valid
         reactive.valid = true
-        cacheValue = computation()
-      else cacheValue
+        cacheValue = computation.call(this)
+      else
+        cacheValue
     else
       if value==cacheValue
         value
       else
-        cacheValue = computation(value)
+        cacheValue = computation.call(this, value)
         reactive.invalidate()
         cacheValue
 
@@ -105,7 +106,7 @@ flow.pipe = (deps..., computation) ->
         for dep in deps
           if typeof dep == 'function' then args.push dep()
           else args.push dep
-        computation.apply(null, args)
+        computation.apply(this, args)
       return reactive
 
   reactive = react ->
@@ -113,7 +114,7 @@ flow.pipe = (deps..., computation) ->
     for dep in deps
       if typeof dep == 'function' then args.push dep()
       else args.push dep
-    computation.apply(null, args)
+    computation.apply(this, args)
 
   for dep in deps
     if dep and dep.onInvalidate
@@ -123,9 +124,11 @@ flow.pipe = (deps..., computation) ->
 
 flow.react = react
 
+flow.lazy = lazy
+
 flow.renew = renew
 
-flow.dependent = dependent
+flow.lazy = lazy
 
 flow.flow = flow
 

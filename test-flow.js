@@ -2,7 +2,7 @@ var bind, bindings, ddescribe, duplex, expect, flow, idescribe, iit, ndescribe, 
 
 _ref = require('bdd-test-helper'), expect = _ref.expect, iit = _ref.iit, idescribe = _ref.idescribe, nit = _ref.nit, ndescribe = _ref.ndescribe, ddescribe = _ref.ddescribe;
 
-_ref1 = require('./index'), see = _ref1.see, bind = _ref1.bind, duplex = _ref1.duplex, renew = _ref1.renew, flow = _ref1.flow;
+_ref1 = require('lazy-flow'), see = _ref1.see, bind = _ref1.bind, duplex = _ref1.duplex, renew = _ref1.renew, flow = _ref1.flow;
 
 _ref2 = require('./addon'), bindings = _ref2.bindings, seeAttrs = _ref2.seeAttrs;
 
