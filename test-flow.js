@@ -46,7 +46,7 @@ describe('reactive flow', function() {
     }), a_ = _ref3.a_, b_ = _ref3.b_;
     r = flow.neg(a_);
     expect(r()).to.equal(-4, 'neg');
-    r = flow.no(a_);
+    r = flow.not(a_);
     expect(r()).to.equal(false, 'not');
     r = flow.abs(flow.neg(a_));
     expect(r()).to.equal(4, 'abs neg');

@@ -34,7 +34,7 @@ flow.neg = function(x) {
   });
 };
 
-flow.no = flow.not = flow.not_ = function(x) {
+flow.not = function(x) {
   return unary(x, function(x) {
     return !x;
   });
@@ -95,6 +95,12 @@ flow.div = function(x, y) {
 flow.min = function(x, y) {
   return binary(x, y, function(x, y) {
     return Math.min(x, y);
+  });
+};
+
+flow.max = function(x, y) {
+  return binary(x, y, function(x, y) {
+    return Math.max(x, y);
   });
 };
 

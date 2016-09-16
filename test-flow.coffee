@@ -33,7 +33,7 @@ describe 'reactive flow', ->
     {a_, b_} = bindings({a: 4, b: 2})
     r = flow.neg a_
     expect(r()).to.equal -4, 'neg'
-    r = flow.no a_
+    r = flow.not a_
     expect(r()).to.equal false, 'not'
     r = flow.abs flow.neg a_
     expect(r()).to.equal 4, 'abs neg'

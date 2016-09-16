@@ -2,32 +2,34 @@
 
 react = (method) ->
 
-  if method.invalidate then return method
+  if method.invalidate
+    return method
 
   method.valid = false
 
   method.invalidateCallbacks = []
 
   method.onInvalidate = (callback) ->
-    if typeof callback != 'function' then throw new Error "call back should be a function"
-    invalidateCallbacks = method.invalidateCallbacks or  method.invalidateCallbacks = []
-    invalidateCallbacks.push(callback)
+    if typeof callback != 'function'
+      throw new Error "call back should be a function"
+    else
+      invalidateCallbacks = method.invalidateCallbacks ||  method.invalidateCallbacks = []
+      invalidateCallbacks.push(callback)
 
   method.offInvalidate = (callback) ->
     {invalidateCallbacks} = method
-    if !invalidateCallbacks then return
-    index = invalidateCallbacks.indexOf(callback)
-    if index<0 then return
-    invalidateCallbacks.splice(index, 1)
-    if !invalidateCallbacks.length then method.invalidateCallbacks = null
+    if invalidateCallbacks && (index = invalidateCallbacks.indexOf(callback)) >= 0
+        invalidateCallbacks.splice(index, 1)
+        if !invalidateCallbacks.length
+          method.invalidateCallbacks = null
+    method
 
   method.invalidate = ->
-    if !method.valid then return
-    if !method.invalidateCallbacks then return
-    for callback in method.invalidateCallbacks
-     callback()
-    method.valid = false
-    return
+    if method.valid && method.invalidateCallbacks
+      for callback in method.invalidateCallbacks
+       callback()
+      method.valid = false
+    method
 
   method
 
@@ -44,31 +46,24 @@ renew = (computation) ->
 
   react method
 
-lazy = (computation) ->
-  cacheValue = null
-
-  method = ->
-    if !arguments.length
-      if !method.valid
-        method.valid = true
-        cacheValue = computation.call(this)
-      else cacheValue
-    else throw new Error 'flow.lazy is not allowed to accept arguments'
-
-  method.toString = () ->  "lazy: #{funcString(computation)}"
-
+lazy = (method) ->
   react method
+  method.invalidate = ->
+    if method.invalidateCallbacks
+      for callback in method.invalidateCallbacks
+        callback()
+    method
+  oldToString = method.toString
+  method.toString = () ->  "lazy: #{oldToString.call(method)}"
+  method
 
 module.exports = flow = (deps..., computation) ->
   if !deps.length
-    return react computation
+    return lazy computation
 
   for dep in deps
-    if typeof dep == 'function' and !dep.invalidate
-      reactive = react ->
-        reactive.invalidate()
-        computation.call(this)
-      return reactive
+    if typeof dep == 'function' && !dep.invalidate
+      return renew(computation)
 
   cacheValue = null
 
@@ -88,7 +83,7 @@ module.exports = flow = (deps..., computation) ->
         cacheValue
 
   for dep in deps
-    if dep and dep.onInvalidate
+    if dep && dep.onInvalidate
       dep.onInvalidate(reactive.invalidate)
 
   reactive.toString = ->
@@ -98,18 +93,21 @@ module.exports = flow = (deps..., computation) ->
 
 flow.pipe = (deps..., computation) ->
   for dep in deps
-    if typeof dep == 'function' and !dep.invalidate
+    if typeof dep == 'function' && !dep.invalidate
       reactive = react ->
-        if argumnets.length then throw new Error "flow.pipe is not allow to have arguments"
-        reactive.invalidate()
+        if arguments.length then throw new Error "flow.pipe is not allow to have arguments"
         args = []
         for dep in deps
           if typeof dep == 'function' then args.push dep()
           else args.push dep
-        computation.apply(this, args)
+        result = computation.apply(this, args)
+        reactive.valid = true
+        reactive.invalidate()
+        result
       return reactive
 
   reactive = react ->
+    reactive.valid = true
     args = []
     for dep in deps
       if typeof dep == 'function' then args.push dep()
@@ -117,7 +115,7 @@ flow.pipe = (deps..., computation) ->
     computation.apply(this, args)
 
   for dep in deps
-    if dep and dep.onInvalidate
+    if dep && dep.onInvalidate
       dep.onInvalidate(reactive.invalidate)
 
   reactive
@@ -127,8 +125,6 @@ flow.react = react
 flow.lazy = lazy
 
 flow.renew = renew
-
-flow.lazy = lazy
 
 flow.flow = flow
 
@@ -165,7 +161,7 @@ if Object.defineProperty
       getter = d.get
       {set} = d
 
-    if !getter or !getter.invalidate
+    if !getter || !getter.invalidate
       getter = ->
         if arguments.length
           throw new Error('should not set value on flow.bind')
@@ -176,29 +172,34 @@ if Object.defineProperty
 
       setter = (value) ->
         if value!=obj[attr]
-          if set then set(value)
-          getter.invalidate()
+          if set then set.call(obj, value)
           getter.cacheValue = value
+          getter.invalidate()
+          value
+
       react getter
 
-      getter.toString = () ->  "#{debugName or 'm'}[#{attr}]"
+      getter.toString = () ->  "#{debugName || 'm'}[#{attr}]"
       Object.defineProperty(obj, attr, {get:getter, set:setter})
     getter
 
   flow.duplex = (obj, attr, debugName) ->
     d = Object.getOwnPropertyDescriptor(obj, attr)
-    if d then {get, set} = d
+    if d
+      {get, set} = d
 
-    if !set or !set.invalidate
+    if !set || !set.invalidate
       method = (value) ->
         if !arguments.length
           method.valid = true
           return method.cacheValue
         if value!=obj[attr]
-          if set then set(value)
-          get and get.invalidate and get.invalidate()
-          method.invalidate()
+          if set
+            set.call(obj, value)
+          get && get.invalidate && get.invalidate()
           method.cacheValue = value
+          method.invalidate()
+          value
       method.cacheValue = obj[attr]
       react method
       method.isDuplex = true
@@ -217,8 +218,8 @@ else
     if !obj.dcSet$
       obj.dcSet$ = (attr, value) ->
         if value!=obj[attr]
-          _dcBindMethodMap and _dcBindMethodMap[attr] and _dcBindMethodMap[attr].invalidate()
-          (_dcDuplexMethodMap=@_dcDuplexMethodMap) and _dcDuplexMethodMap[attr] and _dcDuplexMethodMap[attr].invalidate()
+          _dcBindMethodMap && _dcBindMethodMap[attr] && _dcBindMethodMap[attr].invalidate()
+          (_dcDuplexMethodMap=@_dcDuplexMethodMap) && _dcDuplexMethodMap[attr] && _dcDuplexMethodMap[attr].invalidate()
 
     method = _dcBindMethodMap[attr]
     if !method
@@ -238,8 +239,8 @@ else
     if !obj.dcSet$
       obj.dcSet$ = (attr, value) ->
         if value!=obj[attr]
-          (_dcBindMethodMap=@_dcBindMethodMap) and _dcBindMethodMap[attr] and _dcBindMethodMap[attr].invalidate()
-          _dcDuplexMethodMap and _dcDuplexMethodMap[attr] and _dcDuplexMethodMap[attr].invalidate()
+          (_dcBindMethodMap=@_dcBindMethodMap) && _dcBindMethodMap[attr] && _dcBindMethodMap[attr].invalidate()
+          _dcDuplexMethodMap && _dcDuplexMethodMap[attr] && _dcDuplexMethodMap[attr].invalidate()
         value
 
     method = _dcDuplexMethodMap[attr]
@@ -263,8 +264,8 @@ flow.unary = (x, unaryFn) ->
   else -> unaryFn(x())
 
 flow.binary = (x, y, binaryFn) ->
-  if typeof x == 'function' and typeof y == 'function'
-    if x.invalidate and y.invalidate then flow x, y, -> binaryFn x(), y()
+  if typeof x == 'function' && typeof y == 'function'
+    if x.invalidate && y.invalidate then flow x, y, -> binaryFn x(), y()
     else -> binaryFn x(), y()
   else if typeof x == 'function'
     if x.invalidate then flow x, -> binaryFn x(), y

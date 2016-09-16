@@ -13,39 +13,33 @@ react = function(method) {
     var invalidateCallbacks;
     if (typeof callback !== 'function') {
       throw new Error("call back should be a function");
+    } else {
+      invalidateCallbacks = method.invalidateCallbacks || (method.invalidateCallbacks = []);
+      return invalidateCallbacks.push(callback);
     }
-    invalidateCallbacks = method.invalidateCallbacks || (method.invalidateCallbacks = []);
-    return invalidateCallbacks.push(callback);
   };
   method.offInvalidate = function(callback) {
     var index, invalidateCallbacks;
     invalidateCallbacks = method.invalidateCallbacks;
-    if (!invalidateCallbacks) {
-      return;
+    if (invalidateCallbacks && (index = invalidateCallbacks.indexOf(callback)) >= 0) {
+      invalidateCallbacks.splice(index, 1);
+      if (!invalidateCallbacks.length) {
+        method.invalidateCallbacks = null;
+      }
     }
-    index = invalidateCallbacks.indexOf(callback);
-    if (index < 0) {
-      return;
-    }
-    invalidateCallbacks.splice(index, 1);
-    if (!invalidateCallbacks.length) {
-      return method.invalidateCallbacks = null;
-    }
+    return method;
   };
   method.invalidate = function() {
     var callback, _i, _len, _ref1;
-    if (!method.valid) {
-      return;
+    if (method.valid && method.invalidateCallbacks) {
+      _ref1 = method.invalidateCallbacks;
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        callback = _ref1[_i];
+        callback();
+      }
+      method.valid = false;
     }
-    if (!method.invalidateCallbacks) {
-      return;
-    }
-    _ref1 = method.invalidateCallbacks;
-    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-      callback = _ref1[_i];
-      callback();
-    }
-    method.valid = false;
+    return method;
   };
   return method;
 };
@@ -69,41 +63,37 @@ renew = function(computation) {
   return react(method);
 };
 
-lazy = function(computation) {
-  var cacheValue, method;
-  cacheValue = null;
-  method = function() {
-    if (!arguments.length) {
-      if (!method.valid) {
-        method.valid = true;
-        return cacheValue = computation.call(this);
-      } else {
-        return cacheValue;
+lazy = function(method) {
+  var oldToString;
+  react(method);
+  method.invalidate = function() {
+    var callback, _i, _len, _ref1;
+    if (method.invalidateCallbacks) {
+      _ref1 = method.invalidateCallbacks;
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        callback = _ref1[_i];
+        callback();
       }
-    } else {
-      throw new Error('flow.lazy is not allowed to accept arguments');
     }
+    return method;
   };
+  oldToString = method.toString;
   method.toString = function() {
-    return "lazy: " + (funcString(computation));
+    return "lazy: " + (oldToString.call(method));
   };
-  return react(method);
+  return method;
 };
 
 module.exports = flow = function() {
   var cacheValue, computation, dep, deps, reactive, _i, _j, _k, _len, _len1;
   deps = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), computation = arguments[_i++];
   if (!deps.length) {
-    return react(computation);
+    return lazy(computation);
   }
   for (_j = 0, _len = deps.length; _j < _len; _j++) {
     dep = deps[_j];
     if (typeof dep === 'function' && !dep.invalidate) {
-      reactive = react(function() {
-        reactive.invalidate();
-        return computation.call(this);
-      });
-      return reactive;
+      return renew(computation);
     }
   }
   cacheValue = null;
@@ -152,11 +142,10 @@ flow.pipe = function() {
     dep = deps[_j];
     if (typeof dep === 'function' && !dep.invalidate) {
       reactive = react(function() {
-        var args, _k, _len1;
-        if (argumnets.length) {
+        var args, result, _k, _len1;
+        if (arguments.length) {
           throw new Error("flow.pipe is not allow to have arguments");
         }
-        reactive.invalidate();
         args = [];
         for (_k = 0, _len1 = deps.length; _k < _len1; _k++) {
           dep = deps[_k];
@@ -166,13 +155,17 @@ flow.pipe = function() {
             args.push(dep);
           }
         }
-        return computation.apply(this, args);
+        result = computation.apply(this, args);
+        reactive.valid = true;
+        reactive.invalidate();
+        return result;
       });
       return reactive;
     }
   }
   reactive = react(function() {
     var args, _k, _len1;
+    reactive.valid = true;
     args = [];
     for (_k = 0, _len1 = deps.length; _k < _len1; _k++) {
       dep = deps[_k];
@@ -198,8 +191,6 @@ flow.react = react;
 flow.lazy = lazy;
 
 flow.renew = renew;
-
-flow.lazy = lazy;
 
 flow.flow = flow;
 
@@ -257,10 +248,11 @@ if (Object.defineProperty) {
       setter = function(value) {
         if (value !== obj[attr]) {
           if (set) {
-            set(value);
+            set.call(obj, value);
           }
+          getter.cacheValue = value;
           getter.invalidate();
-          return getter.cacheValue = value;
+          return value;
         }
       };
       react(getter);
@@ -288,11 +280,12 @@ if (Object.defineProperty) {
         }
         if (value !== obj[attr]) {
           if (set) {
-            set(value);
+            set.call(obj, value);
           }
           get && get.invalidate && get.invalidate();
+          method.cacheValue = value;
           method.invalidate();
-          return method.cacheValue = value;
+          return value;
         }
       };
       method.cacheValue = obj[attr];
